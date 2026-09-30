@@ -7,7 +7,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/',
+  // Use a relative base so the built app works whether it is served from /
+  // or mounted under /admin by the Express server.
+  base: './',
   plugins: [react()],
   server: {
     host: '0.0.0.0',
