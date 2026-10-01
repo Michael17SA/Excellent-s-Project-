@@ -7,9 +7,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  // Use a relative base so the built app works whether it is served from /
-  // or mounted under /admin by the Express server.
-  base: './',
+  // FIX: back to an absolute '/admin/'. The relative './' base broke every
+  // nested URL: a refresh on /admin/listings/<id>/edit asked for
+  // /admin/listings/<id>/assets/index.js and got HTML back (blank page).
+  // main.jsx reads this same value for the router basename, so the two can't
+  // drift apart again. Set ADMIN_BASE=/ only if you host the admin on its own.
+  base: process.env.ADMIN_BASE || '/admin/',
   plugins: [react()],
   server: {
     host: '0.0.0.0',

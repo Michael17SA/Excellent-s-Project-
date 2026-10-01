@@ -4,7 +4,9 @@
  * Demo data seeder: wipes the collections then inserts users, listings and
  * reservations so the app is instantly explorable. Run with `npm run seed`.
  */
-process.env.MONGO_URI = process.env.MONGO_URI || '';
+// FIX: load .env first. This used to set MONGO_URI to '' before dotenv ran,
+// and dotenv never overwrites a variable that already exists, so the seeder
+// always ignored MONGO_URI and filled the sandbox database instead of yours.
 require('dotenv').config();
 const connectDB = require('../config/db');
 const User = require('../models/User');

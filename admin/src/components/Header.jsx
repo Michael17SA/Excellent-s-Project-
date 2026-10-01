@@ -3,7 +3,7 @@
  * (view reservations / log out) when logged in, "Become a host" when not.
  */
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Logo = () => (
@@ -60,7 +60,8 @@ export default function Header() {
               </div>
             </>
           ) : (
-            <a className="host-link" href="/admin/listings" onClick={(e) => { e.preventDefault(); navigate('/listings'); }}>Become a host</a>
+            // FIX: was a hardcoded href="/admin/listings"; Link adds the basename itself.
+            <Link className="host-link" to="/listings">Become a host</Link>
           )}
         </div>
       </div>

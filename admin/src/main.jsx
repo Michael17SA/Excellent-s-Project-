@@ -9,7 +9,10 @@ import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter >
+    {/* FIX: the basename was removed, so the router saw "/admin/login" as an
+        unknown route and every admin page rendered the 404. BASE_URL comes
+        from `base` in vite.config.js ("/admin/" by default). */}
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <ToastProvider>
           <App />

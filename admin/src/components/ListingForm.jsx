@@ -95,6 +95,9 @@ export default function ListingForm({ initial, existingId, onSaved }) {
         Object.entries(form).forEach(([k, v]) => {
           // images array is sent as a JSON string; files are appended below
           if (k === 'images') payload.append('images', JSON.stringify(form.images));
+          // FIX: FormData turns an array into "wifi,kitchen,pool", which was saved
+          // as ONE amenity. Appending each one separately gives the server a real array.
+          else if (k === 'amenities') v.forEach((a) => payload.append('amenities', a));
           else payload.append(k, v);
         });
         files.forEach((f) => payload.append('images', f));
