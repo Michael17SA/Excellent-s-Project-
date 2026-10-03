@@ -227,3 +227,86 @@ They're worth knowing about, though:
   `mongodb-memory-server` downloads a 600–800 MB MongoDB binary the first time the sandbox
   database runs. If you already have MongoDB installed, setting `MONGO_URI` in `server/.env` skips
   all of that (and with fix #4, the seed script now respects it).
+
+---
+
+## Update: deploying on Render
+
+### What you'd see
+
+The Render build fails because it can't find a Vite config.
+
+### Why it happened
+
+Render builds from the root of the repo, and there's no Vite app there. The project is really
+three apps in one repo: `client/` and `admin/` are separate Vite apps, each with its own
+`vite.config.js` and its own `node_modules`, and `server/` is Express. So running Vite at the root
+finds nothing to build.
+
+There are two more traps right behind that one:
+
+- **Vite is a devDependency.** When `NODE_ENV=production` is set, npm skips devDependencies, so
+  even a build pointed at the right folder fails with `vite: not found`.
+- **It can't be a Static Site.** Both frontends call the API at `/api` on the same address they're
+  loaded from. Express serves the guest site, the admin and the API together (see
+  `server/server.js`), so it has to be one **Web Service**.
+
+### What I changed
+
+- **`package.json` (root):** a new `render-build` script. It installs the server, client and admin
+  (including Vite for the two frontends), then runs the normal `npm run build`. I also pinned Node
+  to `22.x` so Render doesn't choose a different version.
+- **`render.yaml` (new):** a Render Blueprint that sets all of this up for you.
+
+### Setting it up on Render
+
+**Easiest: use the Blueprint.** In Render, go to **New → Blueprint**, pick the repo, and paste your
+MongoDB Atlas connection string when it asks for `MONGO_URI`. Everything else is already filled in.
+
+**Or fix the service you already have** under **Settings** and **Environment**:
+
+| Setting | Value |
+|---------|-------|
+| Service type | **Web Service** (if it's a Static Site, delete it and create a Web Service, because Render can't switch types) |
+| Root Directory | *leave empty* |
+| Build Command | `npm run render-build` |
+| Start Command | `npm start` |
+| Health Check Path | `/api/health` |
+
+Environment variables:
+
+| Key | Value |
+|-----|-------|
+| `NODE_ENV` | `production` |
+| `MONGO_URI` | your Atlas connection string |
+| `JWT_SECRET` | any long random string |
+| `JWT_EXPIRES_IN` | `30d` |
+| `ALLOW_MEMORY_MONGO` | `false` |
+| `MONGOMS_DISABLE_POSTINSTALL` | `1` |
+
+The last two matter on Render. `ALLOW_MEMORY_MONGO=false` makes the server stop with a clear error
+if it can't reach Atlas, instead of quietly starting a temporary database that's wiped on every
+restart. `MONGOMS_DISABLE_POSTINSTALL=1` skips the 600–800 MB MongoDB download during the build.
+
+### The database
+
+- In Atlas, under **Network Access**, allow `0.0.0.0/0`. Render's free plan has no fixed IP
+  address, so without this the connection times out.
+- The Atlas database starts out empty. To fill it, put the same Atlas `MONGO_URI` in your local
+  `server/.env` and run `npm run seed` from your own machine (fix #4 above is what makes this work).
+
+### Good to know
+
+- On the free plan, the service goes to sleep after about 15 minutes without visitors. The next
+  visit takes up to a minute to wake it up, so open the site before a demo.
+- Photos uploaded through the admin are saved to the server's own disk, and Render wipes that disk
+  on every deploy and restart, so uploaded photos will disappear. The seed photos are fine because
+  they're in the repo. Keeping uploads for good would mean moving them to something like Cloudinary.
+
+### How I tested it
+
+I made a fresh copy of the repo with no `node_modules` or `dist`, set `NODE_ENV=production` the
+way Render does, and ran `npm run render-build`. Both apps built. Then I started it with `npm start`
+and checked `/`, `/admin/`, a refresh on `/admin/listings/<id>/edit`, `/api/health` and
+`/api/accommodations`. Everything loaded, and the admin's JavaScript came back as JavaScript,
+not HTML.

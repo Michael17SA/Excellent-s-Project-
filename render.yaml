@@ -1,0 +1,31 @@
+# render.yaml – Render Blueprint
+# One Web Service runs everything: Express serves the API at /api, the guest
+# site at / and the admin dashboard at /admin (see server/server.js).
+# The Vite apps live in client/ and admin/, not the repo root, so the build
+# installs and builds each of them via `npm run render-build`.
+services:
+  - type: web
+    name: airbnb-clone
+    runtime: node
+    plan: free
+    buildCommand: npm run render-build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # MongoDB Atlas connection string. Render asks for it when the
+      # Blueprint is created. Atlas must allow access from 0.0.0.0/0.
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      # Fail loudly if Atlas can't be reached instead of quietly starting a
+      # throwaway database that is wiped on every restart.
+      - key: ALLOW_MEMORY_MONGO
+        value: "false"
+      # Skip mongodb-memory-server's 600–800 MB mongod download during the build.
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"

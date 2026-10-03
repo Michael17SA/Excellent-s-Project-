@@ -10,6 +10,10 @@
     "dev:client": "npm --prefix client run dev",
     "dev:admin": "npm --prefix admin run dev",
     "build": "npm --prefix client run build && npm --prefix admin run build",
+    "render-build": "npm --prefix server ci --omit=dev && npm --prefix client ci --include=dev && npm --prefix admin ci --include=dev && npm run build",
     "start": "npm --prefix server run start"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
